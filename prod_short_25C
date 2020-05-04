@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# number equilibration productions that should be used as the starting point for the short simulations
+id=$1
+
+folder=$(($id * 2))
+
+if [ ! -d ${folder}ns_productions_short ]; then
+	mkdir ${folder}ns_productions_short
+fi
+
+infile=${PWD##*/}
+
+path=${PWD}
+
+# get highest restart file
+# files="$(ls productions/prod_*.rst)"
+# top=0
+
+# for file in $files; do
+# 	id=$(echo $file | tr -dc '0-9')
+# 	if [[ $id -gt $top ]]; then
+# 		top=$id
+# 	fi
+# done
+
+# echo prod_$top.rst
+
+if [ "$#" == 1 ]; then
+	# the first 7 trajectories are create non-sparse manner creating 50 frames
+	for i in {1..7}
+	do
+		pmemd.cuda -O -i /d/as2/u/rm001/BashUtils/InputFiles/prod_short_25C.in -p $infile.prmtop -c productions/prod_$id.rst -o ${folder}ns_productions_short/prod_short_$i.out -r ${folder}ns_productions_short/prod_short_$i.rst -x ${folder}ns_productions_short/prod_short_$i.nc -inf ${folder}ns_productions_short/prod_short_$i.info
+
+		if [ -f ${folder}ns_productions_short/prod_short_$i.rst  ]; then
+			echo " " | mailx -s "HOST: $HOST GPU: $CUDA_VISIBLE_DEVICES - $path $infile prod short $i finished" ucbtmc7@ucl.ac.uk
+		fi
+	done
+	
+	# from trajectory 8 onwards only 10 frames are generated in each trajectory
+	for i in {8..30}
+	do
+		pmemd.cuda -O -i /d/as2/u/rm001/BashUtils/InputFiles/prod_short_sparse_25C.in -p $infile.prmtop -c productions/prod_$id.rst -o ${folder}ns_productions_short/prod_short_$i.out -r ${folder}ns_productions_short/prod_short_$i.rst -x ${folder}ns_productions_short/prod_short_$i.nc -inf ${folder}ns_productions_short/prod_short_$i.info
+		
+		if [ -f ${folder}ns_productions_short/prod_short_$i.rst ]; then
+			echo " " | mailx -s "HOST: $HOST GPU: $CUDA_VISIBLE_DEVICES - $path $infile prod short sparse $i finished" ucbtmc7@ucl.ac.uk
+		fi
+	done
+fi
+
+# if three input arguments are given than trajectories are created specified by these numbers
+if [ "$#" -gt 2 ]; then
+	if [ $(($2)) -gt 7 ]; then
+		# from trajectory 8 onwards only 10 frames are generated in each trajectory
+		for i in $(seq $2 $3);
+		do
+			pmemd.cuda -O -i /d/as2/u/rm001/BashUtils/InputFiles/prod_short_sparse_25C.in -p $infile.prmtop -c productions/prod_$id.rst -o ${folder}ns_productions_short/prod_short_$i.out -r ${folder}ns_productions_short/prod_short_$i.rst -x ${folder}ns_productions_short/prod_short_$i.nc -inf ${folder}ns_productions_short/prod_short_$i.info
+			
+			if [ -f ${folder}ns_productions_short/prod_short_$i.rst ]; then
+				echo " " | mailx -s "HOST: $HOST GPU: $CUDA_VISIBLE_DEVICES - $path $infile prod short sparse $i finished" ucbtmc7@ucl.ac.uk
+			fi
+		done
+	fi
+	if [ $(($2)) -lt 8 ]; then
+		# the first 7 trajectories are create non-sparse manner creating 50 frames
+		for i in $(seq $2 7);
+		do
+			pmemd.cuda -O -i /d/as2/u/rm001/BashUtils/InputFiles/prod_short_25C.in -p $infile.prmtop -c productions/prod_$id.rst -o ${folder}ns_productions_short/prod_short_$i.out -r ${folder}ns_productions_short/prod_short_$i.rst -x ${folder}ns_productions_short/prod_short_$i.nc -inf ${folder}ns_productions_short/prod_short_$i.info
+
+			if [ -f ${folder}ns_productions_short/prod_short_$i.rst  ]; then
+				echo " " | mailx -s "HOST: $HOST GPU: $CUDA_VISIBLE_DEVICES - $path $infile prod short $i finished" ucbtmc7@ucl.ac.uk
+			fi
+		done
+		# from trajectory 8 onwards only 10 frames are generated in each trajectory
+		for i in $(seq 8 $3);
+		do
+			pmemd.cuda -O -i /d/as2/u/rm001/BashUtils/InputFiles/prod_short_sparse_25C.in -p $infile.prmtop -c productions/prod_$id.rst -o ${folder}ns_productions_short/prod_short_$i.out -r ${folder}ns_productions_short/prod_short_$i.rst -x ${folder}ns_productions_short/prod_short_$i.nc -inf ${folder}ns_productions_short/prod_short_$i.info
+			
+			if [ -f ${folder}ns_productions_short/prod_short_$i.rst ]; then
+				echo " " | mailx -s "HOST: $HOST GPU: $CUDA_VISIBLE_DEVICES - $path $infile prod short sparse $i finished" ucbtmc7@ucl.ac.uk
+			fi
+		done
+	fi
+fi
+

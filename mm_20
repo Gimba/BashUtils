@@ -1,0 +1,25 @@
+
+# script to run MMGBSA calculations using 15 cores (on a 20 core machine, hence the 20)
+
+mkdir mmpbsa
+
+create_all_short
+
+cd mmpbsa
+
+# run mmpbsa 
+
+# get largest prmtop file
+prmtop="$(ls -S ../../*.prmtop | head -1)"
+
+model=${prmtop%.prmtop}
+
+echo $model
+
+dry=${model}_dry.prmtop
+
+mpirun -np 15 MMPBSA.py.MPI -O -i /d/as2/u/rm001/BashUtils/InputFiles/mmpbsa.in -o FINAL_RESULTS_MMPBSA.dat -sp $prmtop -cp $dry -rp ../../rec.prmtop -lp ../../lig.prmtop -y ../all_prod_short_samples.nc -deo all_prod_short_per_frame_energies.csv
+
+rm -rf ../all_prod_short_samples.nc
+
+CalcBounds

@@ -1,0 +1,44 @@
+
+#title          :ps_path
+#description    :This script was to check on simulations running with pmemd or pmemd.cuda.
+#author         :Martin Rosellen
+#date           :20170607
+#version        :v1.0   
+#usage          :./ps_path
+#notes          :       
+#bash_version   :4.2.46(1)-release
+#============================================================================
+
+
+
+#
+
+usage="ps_path: version 1.0 07.06.2017, Martin Rosellen
+
+This script is to check on simulations running with pmemd or pmemd.cuda. It outputs the process ids, working directories and the trajectory file (production) the simulation is currently writing.
+
+-h       			show this help text"
+
+while getopts ':hs:' option; do
+	case "$option" in
+		h) echo "$usage"
+		exit
+		;;
+	esac
+done
+
+pid=($(ps aux | grep -v grep | grep pmemd | awk '{print $2}'))
+
+prod=($(ps aux | grep -v grep | grep pmemd | awk '{print $24}'))
+
+# all=($(ps aux | grep pmemd | awk '{print $2}'))
+echo -e '\npid:   working directory \t\t\t\t\t\t\t\t file'
+echo "-------------------------------------------------------------------------------------------------------------"
+# for i in ${prod[@]}
+for (( i=0; i<${#prod[@]}; i++ ));
+do
+	p=$(pwdx ${pid[$i]})
+	echo -e $p '\t\t' ${prod[$i]}
+	echo "-------------------------------------------------------------------------------------------------------------"
+done
+echo -e 

@@ -1,0 +1,26 @@
+
+mkdir decomp
+
+# script to get decompose binding energies from MMGBSA calculations
+
+create_all_short
+
+cd decomp
+
+# run decomposition with settings found here mmpbsa_decomp_bindingsite.in
+
+# get largest prmtop file
+prmtop="$(ls -S ../../*.prmtop | head -1)"
+
+model=${prmtop%.prmtop}
+
+echo $model
+
+dry=${model}_dry.prmtop
+
+mpirun -np 15 MMPBSA.py.MPI -O -i /d/as2/u/rm001/BashUtils/InputFiles/mmpbsa_decomp_bindingsite.in -o FINAL_RESULTS_MMPBSA.dat -do FINAL_DECOMP_MMPBSA.csv -sp $prmtop -cp $dry -rp ../../rec.prmtop -lp ../../lig.prmtop -y ../all_prod_short_samples.nc
+
+rm -rf ../all_prod_short_samples.nc
+
+cd ..
+

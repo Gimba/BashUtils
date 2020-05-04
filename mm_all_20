@@ -1,0 +1,88 @@
+#! /bin/bash
+
+if [ -f frame_energies.csv ]; then
+	echo file_energies.csv exists, exiting
+	exit
+fi
+
+if [ $2 ]; then
+	
+	cp_prod_bm $2
+	cd ${2}/productions
+fi
+
+if ! [ -d mmpbsa_all_frames ]; then
+	mkdir mmpbsa_all_frames
+fi
+
+# get production with highest number
+# create array
+ar=()
+last=""
+for entry in prod*.nc
+do  
+
+  # get filesize and check if large enough (equilibration productions)
+  if (("$(wc -c $entry | awk '{print $1}')" > 500000008)); then
+  	# extract production number
+  	A="$(cut -d'_' -f2 <<<$entry)"
+  	A="$(cut -d'.' -f1 <<<$A)"
+
+  	# convert to int
+  	A=$(($A))
+
+  	# add to array
+  	ar+=($A)
+
+  	last=$entry
+  else
+
+	if [ -z "$last" ]; then
+		echo no productions found, exiting
+		exit
+	fi
+  	# exit loop if file size is not correct
+ 	break
+  fi
+done
+
+# get max production number
+max=0
+for v in ${ar[@]}; do
+    if (( $v > $max )); then max=$v; fi; 
+done
+
+
+# create production trajectories input string
+if (( $max == 0 )); then
+exit
+fi
+
+if [ $max ]; then
+	for i in $(seq 501 $max)
+	do 
+	 temp=../prod_${i}.nc
+	 var=$var\ $temp
+	done
+fi
+
+echo prod_$max.nc last production with correct size
+echo $var
+
+cd mmpbsa_all_frames
+
+## run mmpbsa
+
+# get largest prmtop file
+prmtop="$(ls -S ../../*.prmtop | head -1)"
+
+# remove .prmtop file extension
+model=${prmtop%.prmtop}
+
+dry=${model}_dry.prmtop
+
+mpirun -np 15 MMPBSA.py.MPI -O -i /d/as2/u/rm001/BashUtils/InputFiles/mmpbsa_notemp.in -o FINAL_RESULTS_MMPBSA.dat -sp $prmtop -cp $dry -rp ../../rec.prmtop -lp ../../lig.prmtop -y $var  -eo frame_energies.csv
+
+# move calculated energies one level down and delete mmpbsa folder
+mv frame_energies.csv ../
+rm -rf mmpbsa_all_frames

@@ -52,5 +52,5 @@ echo prod_$max.nc last production with correct size
 
 prmtop="$(ls -S ../*.prmtop | head -1)"
 
-mpirun -np 15 cpptraj.MPI -p $prmtop -i /d/as2/u/rm001/InputFiles/bindingsite_metrics.cpptraj -y $var
+mpirun -np 15 cpptraj.MPI -p $prmtop -i /d/as2/u/rm001/BashUtils/InputFiles/bsite_metrics.cpptraj -y $var
 

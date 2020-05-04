@@ -1,0 +1,32 @@
+
+# plot interactions between bindingsite residues, also in comparison to wild type
+
+mkdir interaction_drawing
+
+cd interaction_drawing
+
+# get largest prmtop file
+prmtop="$(ls -S ../../../*.prmtop | head -1)"
+trajin="../../../productions/prod_20.nc"
+echo $prmtop
+
+# prod_20.nc used in cpptraj-hbond as default
+cpptraj -p $prmtop -i /d/as2/u/rm001/InputFiles/cpptraj-hbond_20 -y $trajin
+
+python2 /d/as12/u/rm001/AmberUtils/PairwiseDecompTable.py ../FINAL_DECOMP_MMPBSA.csv FINAL_DECOMP_MMPBSA_table.csv -t 0.0
+
+python2 /d/as12/u/rm001/AmberUtils/ConsolidateHbonds.py AV_HBOND_ACCEPTORS_prod4.dat AV_HBOND_DONORS_prod4.dat hbonds_consol.csv
+
+python2 /d/as12/u/rm001/AmberUtils/CreateInteractionControl.py hbonds_consol.csv FINAL_DECOMP_MMPBSA_table.csv /d/as2/u/rm001/InputFiles/1iqd_interactions_control.csv -c ACB -m /d/as2/u/rm001/InputFiles/1iqd_mapping.csv
+
+model=${prmtop%.prmtop}
+
+model=${model:3:${#model}}
+
+model=`basename $model`
+
+python2 /d/as12/u/rm001/AmberUtils/DrawInteractions.py -o /d/as2/u/rm001/InputFiles/1iqd_interactions_control.csv FINAL_DECOMP_MMPBSA_table.csv hbonds_consol.csv 150 ${model}_interactions.pdf ${model}_interactions.csv
+
+cp ../../../../WT/40ns_productions_short/decomp/FINAL_DECOMP_MMPBSA_table.csv FINAL_DECOMP_MMPBSA_table_WT.csv
+
+python2 /d/as12/u/rm001/AmberUtils/DrawInteractions.py -o /d/as2/u/rm001/InputFiles/1iqd_interactions_control.csv -t 1.0 -c FINAL_DECOMP_MMPBSA_table_WT.csv FINAL_DECOMP_MMPBSA_table.csv hbonds_consol.csv 150 ${model}_interactions_cmp.pdf ${model}_interactions_cmp.csv

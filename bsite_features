@@ -1,0 +1,56 @@
+#! /bin/bash
+
+# get production with highest number
+# create array
+ar=()
+last=""
+for entry in prod*.nc
+do  
+
+  # get filesize and check if large enough
+  if (("$(wc -c $entry | awk '{print $1}')" > 490000008)); then
+  	# split string
+  	A="$(cut -d'_' -f2 <<<$entry)"
+  	A="$(cut -d'.' -f1 <<<$A)"
+
+  	# convert to int
+  	A=$(($A))
+  	# add to array
+  	ar+=($A)
+  	last=$entry
+  else
+	if [ -z "$last" ]; then
+		echo no productions found, exiting
+		exit
+	fi
+  	# exit loop if file size is not correct
+ 	break
+  fi
+done
+
+# get max
+max=0
+for v in ${ar[@]}; do
+    if (( $v > $max )); then max=$v; fi; 
+done
+
+
+
+if (( $max == 0 )); then
+exit
+fi
+
+if [ $max ]; then
+	for i in $(seq 1 $max)
+	do 
+	 temp=prod_${i}.nc
+	 var=$var\ $temp
+	done
+fi
+echo prod_$max.nc last production with correct size
+
+
+prmtop="$(ls -S ../*.prmtop | head -1)"
+
+mpirun -np 15 cpptraj.MPI -p $prmtop -i /d/as2/u/rm001/InputFiles/bindingsite_metrics.cpptraj -y $var
+

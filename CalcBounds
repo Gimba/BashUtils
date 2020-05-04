@@ -1,0 +1,14 @@
+
+# calculate statistics and total Delta G value from MMGBSA files, results saved to folder 'bounds'
+
+mkdir bounds
+
+ExtractMMPBSATotals.py bounds/out.csv gb
+
+cd bounds
+
+CalcBounds.py out.csv sum.txt trend.png dist.png
+
+tail -n 1 sum.txt
+
+cd ..

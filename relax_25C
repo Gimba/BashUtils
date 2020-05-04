@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# start relaxation productions
+
+if [ ! -d "productions" ]; then
+	mkdir productions
+fi
+
+infile=${PWD##*/}
+
+pmemd -O -i /d/as2/u/rm001/BashUtils/InputFiles/min_1.in -o productions/min_1.out -p $infile.prmtop -c $infile.inpcrd -r productions/min_1.rst -inf productions/min_1.mdinfo
+
+if [ -f min_1.rst ]; then
+	echo " " | mailx -s "$HOST $CUDA_VISIBLE_DEVICES: $path $infile minimization finished" ucbtmc7@ucl.ac.uk
+fi
+
+pmemd.cuda -O -i /d/as2/u/rm001/BashUtils/InputFiles/rel_1.in -o productions/rel_1.out -p $infile.prmtop -c productions/min_1.rst -r productions/rel_1.rst -x productions/rel_1.nc -inf productions/rel_1.mdinfo -ref productions/min_1.rst
+
+if [ -f rel_1.rst ]; then
+	echo " " | mailx -s "$HOST $CUDA_VISIBLE_DEVICES: $path $infile relax 1 finished" ucbtmc7@ucl.ac.uk
+fi
+
+pmemd.cuda -O -i /d/as2/u/rm001/BashUtils/InputFiles/rel_2_25C.in -o productions/rel_2.out -p $infile.prmtop -c productions/rel_1.rst -r productions/rel_2.rst -x productions/rel_2.nc -inf productions/rel_2.mdinfo -ref productions/rel_1.rst
+
+if [ -f rel_2.rst ]; then
+	echo " " | mailx -s "$HOST $CUDA_VISIBLE_DEVICES: $path $infile relax 2 finished" ucbtmc7@ucl.ac.uk
+fi
+
+pmemd.cuda -O -i /d/as2/u/rm001/BashUtils/InputFiles/rel_3_25C.in -o productions/rel_3.out -p $infile.prmtop -c productions/rel_2.rst -r productions/rel_3.rst -x productions/rel_3.nc -inf productions/rel_3.mdinfo -ref productions/rel_2.rst
+
+if [ -f rel_3.rst ]; then
+	echo " " | mailx -s "$HOST $CUDA_VISIBLE_DEVICES: $path $infile relax 3 finished" ucbtmc7@ucl.ac.uk
+fi
+
+cp productions/rel_3.rst productions/prod_0.rst

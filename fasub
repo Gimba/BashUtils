@@ -1,0 +1,67 @@
+
+#title          :fasub
+#description    :For All SUBfolders(fasub) of subfolders found in the current path execute the given command
+#author         :Martin Rosellen
+#date           :20170607
+#version        :v1.0   
+#usage          :./fasub
+#notes          :       
+#bash_version   :4.2.46(1)-release
+#============================================================================
+
+
+
+#
+
+usage="fasub: version 1.0 07.06.2017, Martin Rosellen
+
+This script can be used to traverse through all the specified subdirectories of the current working directory, and execute a command as if executed in the specified subdirectory. 'fasub' stands for 'For All SUBfolders'.
+
+Example directory structure: 
+
+folder/mydata_1/analysis
+folder/mydata_2/analysis
+folder/mydata_3/analysis
+
+Example usage:
+
+./fasub analysis ls
+
+If the above command is executed in the directory 'folder' it will output the contents off the 'analysis' subdirectories.
+
+usage: fasub <sub_directory> <command> or -h 
+
+where:
+<sub_directory>	name of subsubdirectories
+<command>	specifies the command that should be executed in the subdirectories
+
+optional:
+-h       	show this help text"
+
+
+while getopts ':hs:' option; do
+	case "$option" in
+		h) echo "$usage"
+		exit
+		;;
+	esac
+done
+
+# execute command in every subfolder
+
+for d in */ ; do
+    dir=${PWD}/${d}$1
+
+    if [ -d "$dir" ]; then
+    	cd $dir
+        if [ $3 != '0' ]; then
+            echo $dir
+        fi
+    	$2
+    	cd ~-
+    else
+        if [ $3 != '0' ]; then
+    	   echo "directory $dir not found"
+        fi
+    fi
+done

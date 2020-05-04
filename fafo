@@ -1,0 +1,52 @@
+
+#title          :fafo
+#description    :For All FOlders(fafo) found in the current path execute the given command
+#author         :Martin Rosellen
+#date           :20170607
+#version        :v1.0   
+#usage          :./fafo
+#notes          :       
+#bash_version   :4.2.46(1)-release
+#============================================================================
+
+
+
+#
+
+usage="fafo: version 1.0 07.06.2017, Martin Rosellen
+
+This script can be used to traverse through all the subdirectories of the current working directory and execute a command as if executed from the subdirectory. 'fafo' stands for 'For All FOlders'. Please note that this only works for subdirectories and not for sub-sub-directories ('fafo directory_in_subdirectory/command' will not work). Please use the script 'fasub' for that.
+
+Example:
+
+Try './fafo ls' to output the contents of all subdirectories.
+
+usage: fafo <command> [<output_subfolder_name>] or -h 
+
+where:
+<command>	specifies the command that should be executed in the subdirectories
+
+optional:
+<output_subfolder_name>		if a second argument (e.g. "1") is given fafo displays the current subdirectory operating in
+-h       			show this help text"
+
+
+while getopts ':hs:' option; do
+	case "$option" in
+		h) echo "$usage"
+		exit
+		;;
+	esac
+done
+
+# execute command in every folder
+
+for d in */ ; do
+    cd $d
+    if [ $2 ]
+    then
+    	echo $d
+    fi
+    $1
+    cd ..
+done

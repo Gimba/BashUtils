@@ -1,0 +1,11 @@
+
+# convert internallly used residue numbers by modeller and cpptraj to original numbering of crystal structure and vice-versa
+
+if [[ (( $1  > 1740 )) ]]; then
+	echo `expr $1 - 1741`
+fi
+
+if [[ (( $1  < 587 )) ]]; then
+	echo `expr $1 + 1741`
+fi
+

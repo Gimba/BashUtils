@@ -1,0 +1,18 @@
+Production
+&cntrl
+imin=0, ntx=1, irest=0, 				! Read box and position info from inpcrd, DO NOT use velocity
+ntb=2,                                                  ! NPT
+cut=10.0, 						! 10A vdw cutoff
+ntp=1, pres0=1.0, 					! Isotropic pressure scaling at 1 atm
+barostat=2, 						! Use MonteCarlo barostat
+ntc=2,
+ntf=2,
+ntt=3, temp0=310.0, gamma_ln=1.0,
+nstlim=500000, dt=0.002,				! 1ns chunks, which is about 6 hours runtime
+iwrap=1, ioutfm=1,
+ntpr=50000,                                             ! print summaries every 20ps                   
+ntwr=250000,                                            ! restart file every 500ps
+ntwx=50000,                                             ! save trajectory every 20ps
+ntr=0, 							! No restraints
+ig=-1,
+/

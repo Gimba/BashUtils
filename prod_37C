@@ -1,0 +1,26 @@
+#!/bin/bash
+
+
+# start an equilibration simulation at 37 Celsius starting with trajectory $1 (prod_($1-1).rst expected) to $2. One trajectory includes 2ns chunks.
+if [ ! -d "productions" ]; then
+	mkdir productions
+fi
+
+infile=${PWD##*/}
+
+path=${PWD}
+
+cp productions/rel_3.rst productions/prod_0.rst
+
+for i in $(seq $1 $2)
+do
+	last=$((i-1))
+
+	pmemd.cuda -O -i /d/as2/u/rm001/BashUtils/InputFiles/prod_37C.in -p $infile.prmtop -c productions/prod_$last.rst -o productions/prod_$i.out -r productions/prod_$i.rst -x productions/prod_$i.nc -inf productions/prod_$i.info
+
+	if [ -f productions/prod_$i.rst ]; then
+		echo " " | mailx -s "$HOST $CUDA_VISIBLE_DEVICES: $path $infile production $i finished" ucbtmc7@ucl.ac.uk
+	fi
+	
+done
+

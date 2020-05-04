@@ -1,0 +1,32 @@
+trajin prod_short_1.nc 30 50 5
+trajin prod_short_2.nc 30 50 5
+trajin prod_short_3.nc 30 50 5
+trajin prod_short_4.nc 30 50 5
+trajin prod_short_5.nc 30 50 5
+trajin prod_short_6.nc 30 50 5
+trajin prod_short_7.nc 30 50 5
+trajin prod_short_8.nc 6 last
+trajin prod_short_9.nc 6 last
+trajin prod_short_10.nc 6 last
+trajin prod_short_11.nc 6 last
+trajin prod_short_12.nc 6 last
+trajin prod_short_13.nc 6 last
+trajin prod_short_14.nc 6 last
+trajin prod_short_15.nc 6 last
+trajin prod_short_16.nc 6 last
+trajin prod_short_17.nc 6 last
+trajin prod_short_18.nc 6 last
+trajin prod_short_19.nc 6 last
+trajin prod_short_20.nc 6 last
+trajin prod_short_21.nc 6 last
+trajin prod_short_22.nc 6 last
+trajin prod_short_23.nc 6 last
+trajin prod_short_24.nc 6 last
+trajin prod_short_25.nc 6 last
+trajin prod_short_26.nc 6 last
+trajin prod_short_27.nc 6 last
+trajin prod_short_28.nc 6 last
+trajin prod_short_29.nc 6 last
+trajin prod_short_30.nc 6 last
+trajout all_prod_short_samples.nc
+go

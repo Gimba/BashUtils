@@ -1,0 +1,27 @@
+#!/bin/bash
+
+if [ ! -d "productions" ]; then
+	mkdir productions
+fi
+
+infile=${PWD##*/}
+
+# if [ "$#" -gt 2 ]; then
+# 	infile=$3
+# fi
+
+# echo $infile
+
+path=${PWD}
+
+for i in $(seq $1 $2)
+do
+	last=$((i-1))
+
+	pmemd.cuda -O -i /d/as2/u/rm001/BashUtils/InputFiles/prod_25C.in -p $infile.prmtop -c productions/prod_$last.rst -o productions/prod_$i.out -r productions/prod_$i.rst -x productions/prod_$i.nc -inf productions/prod_$i.info
+
+	if [ -f productions/prod_$2.rst ]; then
+		echo " " | mailx -s "$HOST $CUDA_VISIBLE_DEVICES: $path $infile production $i finished" ucbtmc7@ucl.ac.uk
+	fi
+	
+done

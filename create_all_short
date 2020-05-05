@@ -3,4 +3,4 @@
 
 model="$(ls -S ../*.prmtop | head -1)"
 
-cpptraj -p $model -i /d/as2/u/rm001/InputFiles/create_all_short.cpptraj
+cpptraj -p $model -i /d/as2/u/rm001/BashUtils/InputFiles/create_all_short.cpptraj

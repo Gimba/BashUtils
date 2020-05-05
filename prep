@@ -1,0 +1,154 @@
+
+#title          :mutate.sh
+#description    :Script to mutate a given pdb.
+#author         :Martin Rosellen
+#date           :20170607
+#version        :v1.0   
+#usage          :./mutate.sh
+#notes          :       
+#bash_version   :4.2.46(1)-release
+#============================================================================
+
+
+
+# Script to mutate a given pdb. Inputs are chain id, pdb and the pdb file that should be used. 
+
+# Requirements: 
+# - AutoSub.py, RelabelChains.py, ReplaceRes.py have to be executable. In other words, their paths have to be added to the system environment (setenv/export ...) 
+#   and they are executable without preceeding 'python' (add '#! /usr/bin/env python' at the beginning of python scripts).
+# - reduce, pdb4amber, tleap, parmed must be executable
+
+# Not implemented yet:
+# - warnings  pdb introduces clashes inside the structure
+# - errors due to faulty installations
+# - errors during execution of scripts do not lead to an exit
+# - arbitrary order of inputs
+# - behavior when chain does not have an identifier
+# - Autosub expects pdb files to start with the lowest residue number
+
+usage="prep: version 1.0 29.10.2017, Martin Rosellen
+
+usage: prep <pdb> or -h 
+
+where:
+<pdb>		
+-h       	show this help text"
+
+while getopts ':hs:' option; do
+	case "$option" in
+		h) echo "$usage"
+		exit
+		;;
+	esac
+done
+
+########## input ##########
+
+
+pdb=$1
+model=${pdb%.pdb}
+
+echo $model
+
+########## pdb4amber ##########
+
+printf "\n"
+echo "Preparing ${model}.pdb for Amber using pdb4amber from Ambertools (output: ${model}_amb.pdb, pdb4amber.log)"
+pdb4amber -i ${model}.pdb -o ${model}_amb.pdb &> pdb4amber.log
+
+# pdb4amber reports missing TER records, if so stop the execution
+if grep -q "TER record" "pdb4amber.log"; 
+	then
+	printf "\n"
+	echo "(!!!) pdb4amber failed, TER record missing. please check the pdb4amber.log file for errors. (this could indicate that coordinates are missing)"
+	exit
+fi
+
+########## Molprobity reduce ##########
+
+rm -rf ${model}_amb_H.pdb
+rm -rf ${model}_amb_trimmed.pdb
+
+printf "\n"
+echo "Using Molprobity program (reduce) to reprotonate $model.pdb (output: ${model}_trimmed.pdb, ${model}_H.pdb)"
+reduce -Trim ${model}_amb.pdb &> ${model}_amb_trimmed.pdb
+reduce -flip ${model}_amb_trimmed.pdb &> ${model}_amb_H.pdb
+
+########## pdb4amber ##########
+
+printf "\n"
+echo "Preparing ${model}_amb_H.pdb for Amber using pdb4amber from Ambertools (output: ${model}_amb_H_amb.pdb, pdb4amber.log)"
+pdb4amber -i ${model}_amb_H.pdb -o ${model}_amb_H_amb.pdb &> pdb4amber.log
+
+# pdb4amber reports missing TER records, if so stop the execution
+if grep -q "TER record" "pdb4amber.log"; 
+	then
+	printf "\n"
+	echo "(!!!) pdb4amber failed, TER record missing. please check the pdb4amber.log file for errors. (this could indicate that coordinates are missing)"
+fi
+
+
+########## tleap ##########
+
+# generate source file for tleap
+
+printf "\n"
+echo "Generating tleap input file (output: tleap.in)"
+printf "source leaprc.protein.ff14SB
+set default PBradii mbondi2
+source leaprc.water.tip3p
+foo=loadpdb ${model}_amb_H_amb.pdb
+check foo 
+solvateoct foo TIP3PBOX 20.0
+addions foo Cl- 0
+saveamberparm foo ${model}.prmtop ${model}.inpcrd
+quit" &> tleap.in
+
+# run tleap
+printf "\n"
+echo "Using Ambertools tleap with generated input file tleap.in (output: ${model}.prmtop, ${model}.inpcrd, leap.log)"
+tleap -f tleap.in &> leap.log
+
+if ! grep -q "Unit is OK." "leap.log"; 
+	then
+	echo "(!!!) tleap failed, please check the leap.log file for errors"
+	exit
+fi
+
+
+########## parmed ##########
+
+echo "checkValidity" &> parmed.in
+
+printf "\n"
+echo "Checking validity of topology using parmed (output: parmed.log)" 
+parmed ${model}.prmtop parmed.in &> parmed.log
+
+
+if ! grep -q "looks OK to me!" "parmed.log"; 
+	then
+	echo "(!!!) parmed failed, please check the parmed.log file for errors"
+	exit
+fi
+
+printf "\n"
+echo "Success!!!"
+
+echo "Cleaning up"
+
+if [ ! -d "prep" ]; then
+	mkdir prep
+fi
+
+mv *.* prep
+mv *_sslink prep
+
+folder=${PWD##*/}
+
+cp prep/${model}.prmtop . 
+
+mv ${model}.prmtop $folder.prmtop
+
+cp prep/${model}.inpcrd . 
+
+mv ${model}.inpcrd $folder.inpcrd

@@ -1,0 +1,35 @@
+
+# create dry, receptor and ligand structures
+
+prmtop="$(ls -S *.prmtop | head -1)"
+
+model=${prmtop%.prmtop}
+
+flag=0
+
+dry=${model}_dry.prmtop
+
+if [ -f $dry ]; then
+        echo $dry exists
+	flag=$((flag+1))         
+fi
+
+if [ -f rec.prmtop ]; then
+        echo rec.prmtop exists         
+	flag=$((flag+1))
+fi
+
+if [ -f lig.prmtop ]; then
+        echo lig.prmtop exists         
+	flag=$((flag+1))
+fi
+
+if [[ $flag == 3 ]]; then
+	echo all files exist, exiting
+	exit
+fi
+
+echo "${model}.prmtop"
+
+ante-MMPBSA.py -p $prmtop -c $dry -s :WAT
+ante-MMPBSA.py -p $dry -r rec.prmtop -l lig.prmtop -m :1-156

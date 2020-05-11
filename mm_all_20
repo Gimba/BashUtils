@@ -59,7 +59,7 @@ exit
 fi
 
 if [ $max ]; then
-	for i in $(seq 501 $max)
+	for i in $(seq 919 $max)
 	do 
 	 temp=../prod_${i}.nc
 	 var=$var\ $temp

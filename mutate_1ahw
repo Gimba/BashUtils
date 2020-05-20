@@ -1,0 +1,273 @@
+
+#title          :mutate.sh
+#description    :Script to mutate a given pdb.
+#author         :Martin Rosellen
+#date           :20170607
+#version        :v1.0   
+#usage          :./mutate.sh
+#notes          :       
+#bash_version   :4.2.46(1)-release
+#============================================================================
+
+
+
+# Script to mutate a given pdb. Inputs are chain id, mutation and the pdb file that should be used. 
+
+# Requirements: 
+# - AutoSub.py, RelabelChains.py, ReplaceRes.py have to be executable. In other words, their paths have to be added to the system environment (setenv/export ...) 
+#   and they are executable without preceeding 'python' (add '#! /usr/bin/env python' at the beginning of python scripts).
+# - reduce, pdb4amber, tleap, parmed must be executable
+
+# Not implemented yet:
+# - warnings  mutation introduces clashes inside the structure
+# - errors due to faulty installations
+# - errors during execution of scripts do not lead to an exit
+# - arbitrary order of inputs
+# - behavior when chain does not have an identifier
+# - Autosub expects pdb files to start with the lowest residue number
+
+usage="mutate: version 1.0 07.06.2017, Martin Rosellen
+
+Creates the files <mutation>.pdb <mutation>.prmtop <mutation>.inpcrd.
+
+usage: mutate <chain> <mutation> <pdb> [<first_res>] [<last_res>] or -h 
+
+where:
+<chain>		specifies the chain (e.g. A)
+<mutation>	mutation (e.g. R2215A)
+<pdb>		pdb that should be used (e.g. 1iqd.pdb)
+
+optional:
+<firt_res>	number of residue to begin with replacement (default: first of the specified chain)
+<last_res>	number of residue to end with replacement  (default: last of the specified chain)
+-h       	show this help text"
+
+while getopts ':hs:' option; do
+	case "$option" in
+		h) echo "$usage"
+		exit
+		;;
+	esac
+done
+
+########## input ##########
+
+chain=$1
+
+mutation=$2
+
+res_num=$(echo $2| tr -dc '0-9')
+res_num=$(CalcResNum1ahw $res_num)
+
+orig=${2:0:1}
+sub=${2: -1}
+
+mutation="$orig$res_num$sub"
+echo $mutation
+
+pdb=$3
+
+if [ "$#" == 3 ]; then
+
+	# get first residue of specified  chain
+	first_res=$(grep '^ATOM.*[A-Z][A-Z][A-Z] C\s*[0-9]' ${pdb} | head -1)
+	first_res=${first_res:22:4}
+	first_res="$(echo -e "${first_res}" | tr -d '[:space:]')"
+	echo $first_res
+
+	# get last residue of specified  chain
+	last_res=$(grep '^ATOM.*[A-Z][A-Z][A-Z] C\s*[0-9]' ${pdb} | tail -1)
+	last_res=${last_res:22:4}
+	last_res="$(echo -e "${last_res}" | tr -d '[:space:]')"
+	echo $last_res
+
+elif [[ "$#" == 5 ]]; then
+	first_res=$4
+	echo $first_res
+
+	last_res=$5
+	echo $last_res
+else
+	echo "Error: Illegal number of parameters (must be 3 or 5)"
+	exit
+fi
+
+
+########## Check input ##########
+
+if [[ $chain != [A-Z] ]] ; then
+	echo "Warning: Chain specfier should be character [A-Z], will try to make it work with no chain identifier"
+	chain=-1
+fi
+
+if ! [[ $first_res =~ ^[0-9]+$ ]] ; then
+	echo "Error: Residue \"${first_res}\" must be a number (pdb might miss chain identifiers)"
+	exit
+fi
+
+if ! [[ $last_res =~ ^[0-9]+$ ]] ; then
+	echo "Error: Residue \"${last_res}\" must be a number (pdb might miss chain identifiers)"
+	exit
+fi
+
+if ! [[ $mutation =~ ^[A-Z][0-9]+[A-Z]$ ]] ; then
+	echo "Error: Mutation \"${mutation}\" does not fit format (e.g. R2215A)"
+	exit
+fi
+
+if [ ! -f ${pdb} ]; then
+	echo "Error: File not found \"${pdb}\"!"
+	exit
+fi
+
+if [[ ${mutation//[!0-9]/} -lt first_res  ]] ; then
+	echo "Error: Mutation residue number \"${mutation//[!0-9]/}\" lower than first chain residue number \"${first_res}\""
+	exit
+fi
+
+if [[ ${mutation//[!0-9]/} -gt last_res  ]] ; then
+	echo "Error: Mutation residue number \"${mutation//[!0-9]/}\" higher than last chain residue number \"${last_res}\""
+	exit
+fi
+
+
+########## AutoSub.py ##########
+
+# TODO: Autosub expects pdb files to start with the lowest residue number and exits if not
+printf "\n"
+echo "Substituting ${mutation} in $pdb (output: autosub_out.pdb, AutoSub.log)"
+echo AutoSub.py $pdb $chain $mutation 1 5 autosub_out.pdb
+python2 /d/as12/u/rm001/AmberUtils/AutoSub.py $pdb $chain $mutation 1 5 autosub_out.pdb &> AutoSub.log
+
+
+########## RelabelChains.py ##########
+
+printf "\n"
+echo "Applying RelabelChains to autosub_out using ${pdb} (output: autosub_out_labeled.pdb, RelabelChains.log)"
+python2 /d/as12/u/rm001/AmberUtils/RelabelChains.py -c C autosub_out.pdb autosub_out_labeled.pdb $pdb &> RelabelChains.log
+
+# TODO: calculate start and end residues of chain
+
+
+########## ReplaceRes.py ##########
+
+printf "\n"
+echo "Replacing residues ${first_res} to ${last_res} of chain ${chain} in ${pdb} using autosub_out_labeled (output: ${mutation}_raw.pdb, ReplaceRes.log)"
+python2 /d/as12/u/rm001/AmberUtils/ReplaceRes.py $pdb ${mutation}_raw.pdb autosub_out_labeled.pdb $chain $first_res $last_res &> ReplaceRes.log
+
+
+########## pdb4amber ##########
+
+printf "\n"
+echo "Preparing ${mutation}H.pdb for Amber using pdb4amber from Ambertools (output: ${mutation}.pdb, pdb4amber.log)"
+pdb4amber -i ${mutation}_raw.pdb -o ${mutation}_amb.pdb &> pdb4amber.log
+
+# pdb4amber reports missing TER records, if so stop the execution
+if grep -q "TER record" "pdb4amber.log"; 
+	then
+	printf "\n"
+	echo "(!!!) pdb4amber failed, TER record missing. please check the pdb4amber.log file for errors. (this could indicate that coordinates are missing)"
+	exit
+fi
+
+########## Molprobity reduce ##########
+
+# remove existing files (reduce has no overwrite option)
+rm -rf ${mutation}.pdb
+
+printf "\n"
+echo "Using Molprobity program (reduce) to protonate ${mutation}_raw.pdb (output: ${mutation}H.pdb)"
+reduce -flip ${mutation}_amb.pdb &> ${mutation}H.pdb
+
+rm -rf ${mutation}.pdb
+
+
+########## pdb4amber ##########
+
+printf "\n"
+echo "Preparing ${mutation}H.pdb for Amber using pdb4amber from Ambertools (output: ${mutation}.pdb, pdb4amber.log)"
+pdb4amber -i ${mutation}H.pdb -o ${mutation}.pdb &> pdb4amber.log
+
+# pdb4amber reports missing TER records, if so stop the execution
+if grep -q "TER record" "pdb4amber.log"; 
+	then
+	printf "\n"
+	echo "(!!!) pdb4amber failed, TER record missing. please check the pdb4amber.log file for errors. (this could indicate that coordinates are missing)"
+	exit
+fi
+
+
+########## tleap ##########
+
+# generate source file for tleap
+
+printf "\n"
+echo "Generating tleap input file (output: tleap.in)"
+printf "source leaprc.protein.ff14SB
+set default PBradii mbondi2
+source leaprc.water.tip3p
+foo=loadpdb ${mutation}.pdb
+check foo 
+solvateoct foo TIP3PBOX 20.0
+addions foo Cl- 0
+saveamberparm foo ${mutation}.prmtop ${mutation}.inpcrd
+quit" &> tleap.in
+
+# run tleap
+printf "\n"
+echo "Using Ambertools tleap with generated input file tleap.in (output: ${mutation}.prmtop, ${mutation}.inpcrd, leap.log)"
+tleap -f tleap.in &> leap.log
+
+if ! grep -q "Unit is OK." "leap.log"; 
+	then
+	echo "(!!!) tleap failed, please check the leap.log file for errors"
+	exit
+fi
+
+
+########## parmed ##########
+
+echo "checkValidity" &> parmed.in
+
+printf "\n"
+echo "Checking validity of topology using parmed (output: parmed.log)" 
+parmed ${mutation}.prmtop parmed.in &> parmed.log
+
+
+if ! grep -q "looks OK to me!" "parmed.log"; 
+	then
+	echo "(!!!) parmed failed, please check the parmed.log file for errors"
+	exit
+fi
+
+printf "\n"
+echo "Success!!!"
+
+echo "Cleaning up"
+
+mkdir prep
+
+mv *.* prep
+
+mv *sslink* prep
+
+folder=${PWD##*/}
+
+cp prep/$mutation.prmtop . 
+
+mv $mutation.prmtop $folder.prmtop
+
+cp prep/$mutation.inpcrd . 
+
+mv $mutation.inpcrd $folder.inpcrd
+
+printf "parm $folder.prmtop
+trajin $folder.inpcrd
+strip :WAT,Cl-
+strip @H*
+trajout ${folder}_dry.pdb
+go
+" $> dry_trajout.in
+
+cpptraj -i dry_trajout.in
+

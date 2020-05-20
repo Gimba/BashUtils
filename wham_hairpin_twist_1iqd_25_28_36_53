@@ -1,0 +1,5 @@
+
+rm -rf wham.log
+wham P180.0 -89 49 70 0.000000001 298.15 0 meta_file result.dat > wham.log
+cat result.dat | awk '{print$1,$2}' > pmf.dat
+head wham.log

@@ -11,7 +11,7 @@ trajin="../../../productions/prod_20.nc"
 echo $prmtop
 
 # prod_20.nc used in cpptraj-hbond as default
-cpptraj -p $prmtop -i /d/as2/u/rm001/InputFiles/cpptraj-hbond_20 -y $trajin
+cpptraj -p $prmtop -i /d/as2/u/rm001/BashUtils/InputFiles/cpptraj-hbond_20 -y $trajin
 
 python2 /d/as12/u/rm001/AmberUtils/PairwiseDecompTable.py ../FINAL_DECOMP_MMPBSA.csv FINAL_DECOMP_MMPBSA_table.csv -t 0.0
 

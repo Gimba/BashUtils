@@ -1,0 +1,4 @@
+
+hbond dist 3.35 donormask :22-143 acceptormask :185-469 avgout AV_HBOND_ACCEPTORS_prod4.dat
+
+hbond dist 3.35 donormask :185-469 acceptormask :22-143 avgout AV_HBOND_DONORS_prod4.dat

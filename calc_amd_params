@@ -1,0 +1,108 @@
+
+# pick largest .prmtop file
+prmtop="$(ls -S *.prmtop | head -1)"
+
+# remove .prmtop extension
+model=${prmtop%.prmtop}
+
+# remove this file since we will write it again just now
+rm -rf pdb_inpcrd.cpptraj
+
+# create a PDB of the model
+echo "strip :WAT,Cl-
+strip @H=
+trajout ${model}.pdb
+go" >> pdb_inpcrd.cpptraj
+
+cpptraj -p $prmtop -y productions/prod_1.rst -i pdb_inpcrd.cpptraj
+
+rm -rf amd_params.dat
+
+touch amd_params.dat
+
+# calculate AMD boost parameters
+EPtot=$(tail -n 100 productions/prod_1.out | grep EPtot)
+
+EPtot=${EPtot:65:14}
+
+echo "EPtot: ${EPtot}" >> amd_params.dat
+
+echo "EPtot: ${EPtot}"
+
+
+DIHED=$(tail -n 100 productions/prod_1.out | grep DIHED)
+
+DIHED=${DIHED:65:14}
+
+echo "DIHED: ${DIHED}" >> amd_params.dat
+
+echo "DIHED: ${DIHED}"
+
+
+pdb=$model.pdb
+
+echo Pdb: $pdb
+
+atoms=$(grep -c "ATOM" ${pdb})
+
+echo Atoms: $atoms >> amd_params.dat
+
+echo Atoms: $atoms
+
+
+EthreshP=$(echo $EPtot + 0.16*$atoms | bc) 
+
+echo EthreshP: $EthreshP >> amd_params.dat
+
+echo EthreshP: $EthreshP
+
+
+
+alphaP=$(echo 0.16*$atoms | bc)
+
+echo alphaP: $alphaP >> amd_params.dat
+
+echo alphaP: $alphaP
+
+# EthreshD: E(dih)=595 kcal mol-1 + (4kcal mol-1 residue-1 * 58 solute residues) = 827 kcal mol-
+
+EthreshD=$(echo $DIHED + 4*156 | bc)
+
+echo EthreshD: $EthreshD >> amd_params.dat
+
+echo EthreshD: $EthreshD
+
+# alphaD: Alpha(dih)=(1/5)*(4kcal mol-1 residues-1 * 58 solute residues) = 46.4 kcal mol-1
+
+alphaD=$(echo 0.2*4*156 | bc)
+
+echo alphaD: $alphaD >> amd_params.dat
+
+echo alphaD: $alphaD
+
+mkdir amd_config
+
+cd amd_config
+
+rm -rf amd.in
+
+# write AMD settings file ()
+
+echo "500 ps NVT production
+NVT
+ &cntrl
+  imin=0, irest=1, ntx=5,
+  nstlim=250000000, dt=0.002,
+  ntc=2, ntf=2, ig=-1,
+  cut=10.0, ntb=1, ntp=0,
+  ntpr=1000, ntwx=1000,
+  ntt=3, gamma_ln=2.0,
+  temp0=298.15, ioutfm=1, iwrap=1,
+  iamd=3,
+  ethreshd=${EthreshD}, alphad=${alphaD},
+  ethreshp=${EthreshP}, alphap=${alphaP},
+  /" >> amd.in
+
+mkdir productions_AMD
+
+echo pmemd.cuda -O -i ./amd_config/amd.in -p $prmtop -c productions/prod_1.rst -o productions_AMD/amd.out -r productions_AMD/prod_amd.rst -x productions_AMD/prod_amd.nc -inf productions_AMD/prod_amd.info

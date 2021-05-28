@@ -25,12 +25,7 @@ Relaxation 2
 /
 &wt type='TEMP0', 		! specify that temperature should be changed
 istep1=0, 				! step to start at
-istep2=250000, 			! step to finish
+istep2=1000000, 			! step to finish
 value1=50.0, 			! initial value (50K)
 value2=298.15 / 		! final value (310K)
-&wt type='TEMP0', 		! specify that temperature should be changed
-istep1=125001, 			! step to start at
-istep2=1000000, 		! step to finish
-value1=298.15, 			! initial value (0K)
-value2=298.15 / 		! final value (50K)
 &wt type='END' / 		! end section &wt

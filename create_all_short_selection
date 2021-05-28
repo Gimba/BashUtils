@@ -1,0 +1,6 @@
+
+# merge frames that are used in MMGBSA calculations into one trajectory file
+
+model="$(ls -S ../*.prmtop | head -1)"
+
+cpptraj -p $model -i /d/as2/u/rm001/BashUtils/InputFiles/create_all_short.cpptraj

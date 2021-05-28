@@ -62,7 +62,6 @@ Col,Id,Legend,Chain,Fill
 1,SER 221,66,A,Hydro
 1,SER 223,68,A,Hydro
 1,SER 232,77,A,Hydro
-1,SER 250,95,A,Hydro
 1,SER 358,203,A,Hydro
 1,SER 359,204,A,Hydro
 1,SER 364,209,A,Hydro
@@ -84,12 +83,13 @@ Col,Id,Legend,Chain,Fill
 1,VAL 241,86,A,Hydro
 1,VAL 352,197,A,Hydro
 1,VAL 361,206,A,Hydro
+2,ALA  26,2199,C,Hydro
 2,ALA  28,2201,C,Hydro
 2,ALA  35,2208,C,Hydro
 2,ALA  45,2218,C,Hydro
-2,ALA  47,2220,C,Hydro
 2,ARG  36,2209,C,Hydro
 2,ARG  42,2215,C,Hydro
+2,ARG  47,2220,C,Hydro
 2,ARG 131,2304,C,Hydro
 2,ARG 134,2307,C,Hydro
 2,ASN  25,2198,C,Hydro
@@ -148,7 +148,6 @@ Col,Id,Legend,Chain,Fill
 2,LYS  85,2258,C,Hydro
 2,LYS 106,2279,C,Hydro
 2,LYS 108,2281,C,Hydro
-2,MET  26,2199,C,Hydro
 2,MET  65,2238,C,Hydro
 2,MET  82,2255,C,Hydro
 2,PHE  23,2196,C,Hydro

@@ -52,15 +52,15 @@ done
 for d in */ ; do
     dir=${PWD}/${d}$1
 
-    if [ -d "$dir" ]; then
+    if [[ -d "$dir" ]]; then
     	cd $dir
-        if [ $3 != '0' ]; then
+        if [[ $3 != '0' ]]; then
             echo $dir
         fi
     	$2
     	cd ~-
     else
-        if [ $3 != '0' ]; then
+        if [[ $3 != '0' ]]; then
     	   echo "directory $dir not found"
         fi
     fi

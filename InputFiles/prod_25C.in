@@ -3,7 +3,7 @@ Production
 imin=0,					! no minimization, molecular dynamics run
 ntx=5, 					! read coordinates velocities from file specified in pmemd command (e.g. -c productions/rel_3.rst)
 irest=1, 				! read coordinates and velocities from a previously saved restart file
-ntb=2,             		! constant volume
+ntb=2,             		! constant pressure (also set by ntp=1)
 ntp=1, 					! constant pressure
 pres0=1.0, 				! Isotropic pressure scaling at 1 atm
 barostat=2, 			! Use MonteCarlo barostat
